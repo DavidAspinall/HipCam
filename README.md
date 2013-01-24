@@ -13,7 +13,7 @@ If you are eager to use it NOW, do the following:
 * Copy the files in hollight-modifications into the HOL Light directory, overwriting the original ones.    
   Only fusion.ml, tactics.ml and hol.ml are necessary modifications, but the more modifications, the better the quality of the recorded hiproofs.      
   
-Make sure that the variable JGRAPH_BROWSER_COMMAND is set properly for your environment. The default value is
+Make sure that the variable JGRAPH_BROWSER_COMMAND in hiproofs/main.ml is set properly for your environment. The default value is
 
     open "/Applications/Google Chrome.app" $
     
@@ -24,13 +24,14 @@ You can now export a theorem T via
 
     Hitools.export T name
     
-For adding your own labelled boxes to proofs, you can use the **hilabel** function or any of its derivatives:
+For adding your own hierarchical boxes to proofs, you can use the **hilabel** function or any of its derivatives:
 
-    hilabel_thm
-    hilabel_thm_str
-    hilabel_tac
-    hilabel_tac_str
-    hilabel_tac_goals
-    hilabel_tac_frame
+    hilabel : Hiproofs.label -> (thm list -> thm) -> thm list -> thm
+    hilabel_thm : Hiproofs.label -> thm -> thm
+    hilabel_tac : Hiproofs.label -> tactic -> tactic
+    hilabel_tac_goals : Hiproofs.label list -> tactic -> tactic
+    hilabel_tac_frame : Hiproofs.label -> tactic -> tactic
+    
+    string_label : string -> Hiproofs.label
 
 Have fun visualising!
