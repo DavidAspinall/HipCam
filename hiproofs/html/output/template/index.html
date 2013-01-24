@@ -1,0 +1,32 @@
+<html>
+<head>
+	<title id="title">Visualising Hiproofs with Canvas/HTML5</title>
+
+    <script type="text/javascript" src="../../escapeHtml.js"></script>
+	<script type="text/javascript" src="../../graphstruct.js"></script>
+	<script type="text/javascript" src="../../canvastools.js"></script>    
+	<script type="text/javascript" src="../../canvasgraph.js"></script>
+	<script type="text/javascript" src="defgraph.js"></script>
+    
+	<script type="text/javascript">
+                
+        function make(name, gs) {
+            createCanvasGraph(document.getElementById("canvas"), gs, {}, {});
+            document.getElementById("header").innerHTML = escapeHtml(name);
+            document.getElementById("title").innerHTML = "Hiproof: "+escapeHtml(name);
+            
+        };
+        
+        function install() {
+          var graph = defgraph();
+          make(graph.name, graph.gs);
+        };
+        
+	</script>
+</head>
+
+<body onload="install();">
+    <h1 id="header"></h1>
+    <canvas id="canvas"/>
+</body>
+</html>
