@@ -7,9 +7,11 @@ module Hiproofs : sig
   val make_label : 'a labelconstr -> 'a -> label
   val dest_label : 'a labelconstr -> label -> 'a option
 
-  val lc_string : string labelconstr
   val make_string_label : string -> label
   val dest_string_label : label -> string option
+
+  val make_important_label : label -> label
+  val dest_important_label : label -> label option
 
   type complexity = Too_complex | Complexity of int
 
@@ -64,15 +66,18 @@ module Hiproofs : sig
 
   val label_rule : 
       ('thm -> 'a hiproof) * ('a hiproof -> 'thm -> 'thm) 
-      -> label -> 'thm rule -> 'thm rule 
+      -> bool -> label -> 'thm rule -> 'thm rule 
 
   val calcsize : 'a hiproof -> int
-
-  val shrinksize : int -> 'a hiproof -> int
 
   val children : 'a hiproof -> 'a hiproof list
 
   val input : 'a hiproof -> 'a
+  val inputs : 'a hiproof -> 'a list
+
+  val allow_atomic : bool ref
+  val complexity_treshold : int ref
+
 
 (* Utility functions *)
     
@@ -108,9 +113,12 @@ end = struct
   let dest_label lc label = Univ.unbox lc label;; 
 
   let lc_string = labelconstr ();;
-
   let make_string_label = make_label lc_string
   let dest_string_label = dest_label lc_string
+
+  let lc_important = labelconstr();;
+  let make_important_label = make_label lc_important;;
+  let dest_important_label = dest_label lc_important;;
 
   type complexity = Too_complex | Complexity of int
 
@@ -170,18 +178,22 @@ end = struct
       | (xs, []) -> xs
       | ([], ys) -> (List.map fst ys);;
   
-  let complexity_treshold = 100;;
+  let complexity_treshold = ref 1000;;
 
   let add_complexity c1 c2 =
     match (c1, c2) with 
         (Complexity c1, Complexity c2) ->
-          if c1 + c2 < complexity_treshold then 
+          if c1 + c2 < (!complexity_treshold) then 
             Complexity (c1 + c2)
           else
             Too_complex
       | _ -> Too_complex;;
 
   let inc_info (a_in, a_out, v, c) = (a_in, a_out, v, add_complexity c (Complexity 1));;
+  let dec_info (a_in, a_out, v, c) = (a_in, a_out, v, add_complexity c (Complexity (-1)));;
+
+  let inc_info info = info;;
+  let dec_info info = info;;
 
   let tensor = 
     let add_info (in1, out1, vars1, size1) (in2, out2, vars2, size2) =
@@ -194,7 +206,7 @@ end = struct
             (let (his, info) = mk his in
              match hi with
                  Hi_tensor (sub_his, sub_info) -> 
-                   (sub_his@his, add_info sub_info info)
+                   (sub_his@his, dec_info (add_info sub_info info))
                | _ -> (hi::his, add_info info (info_of hi)))
     in
     fun his -> 
@@ -227,7 +239,7 @@ end = struct
             (let (id, his, info) = mk his in
              match hi with
                  Hi_sequence (sub_his, sub_info) ->
-                   (None, sub_his@his, add_info sub_info info)
+                   (None, sub_his@his, dec_info (add_info sub_info info))
                | _ -> 
                    if is_identity hi then
                      (Some hi, his, info)
@@ -312,19 +324,6 @@ end = struct
       | Hi_sequence (his, _) 
       | Hi_tensor (his, _) -> 1 + (sum (List.map calcsize his))
       | _ -> 1;;
-
-
-  let rec shrinksize max hi =
-    match hi with
-        Hi_label (_, _, hi, _) ->
-          (match hisize hi with
-              Too_complex -> 1
-            | Complexity c ->
-                if c <= max then 1 + (shrinksize max hi) else 1)
-      | Hi_sequence (his, _) 
-      | Hi_tensor (his, _) -> 1 + (sum (List.map (shrinksize max) his))
-      | _ -> 1;;
-  
     
   let rec split n xs =
     match xs with
@@ -425,29 +424,35 @@ end = struct
       result;;
   
   type 'thm rule = ('thm list -> 'thm) 
+
+  let allow_atomic = ref true;;
       
-  let label_rule (get, set) lb rule ths =
+  let label_rule (get, set) composite lb rule ths =
     let n = List.length ths in
-    let x = alloc_vars n in
-    try 
-      let (vars, substitution, ths) = 
-        List.fold_right 
-          (fun th (vars, s, ths) ->
-            let i = List.hd vars in
-            let th' =
-              set (Hi_var (i,input (get th))) th
-            in
-            ((i+1)::vars, (i, get th)::s, th'::ths)) ths ([x], [], []) in
-      let vars = List.rev (List.tl vars) in
+    if composite || (not (!allow_atomic)) then
+      let x = alloc_vars n in
+      try 
+        let (vars, substitution, ths) = 
+          List.fold_right 
+            (fun th (vars, s, ths) ->
+              let i = List.hd vars in
+              let th' =
+                set (Hi_var (i,input (get th))) th
+              in
+              ((i+1)::vars, (i, get th)::s, th'::ths)) ths ([x], [], []) in
+        let vars = List.rev (List.tl vars) in
+        let th = rule ths in
+        let (vars, hi) = turn_vars vars (label lb (get th)) in
+        let his = List.map (fun (v,_) -> List.assoc v substitution) vars in
+        let result = set (seq_tensor hi his) th in
+        let _ = release_vars x n in 
+        result
+      with ex ->
+        release_vars x n;
+        raise ex
+    else
       let th = rule ths in
-      let (vars, hi) = turn_vars vars (label lb (get th)) in
-      let his = List.map (fun (v,_) -> List.assoc v substitution) vars in
-      let result = set (seq_tensor hi his) th in
-      let _ = release_vars x n in 
-      result
-    with ex ->
-      release_vars x n;
-      raise ex;;
+      set (seq_tensor (atomic n lb (input (get th))) (List.map get ths)) th;;  
 
   let children hi = 
     match hi with

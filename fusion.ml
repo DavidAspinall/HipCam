@@ -88,7 +88,7 @@ module type Hol_kernel =
 
       type hiproof = (term list * term) Hiproofs.hiproof
       val hiproof : thm -> hiproof      
-      val hilabel : Hiproofs.label -> (thm list -> thm) -> (thm list -> thm) 
+      val hilabel : bool (* composite? *) -> Hiproofs.label -> (thm list -> thm) -> (thm list -> thm) 
 
 end;;                   
 
@@ -121,7 +121,7 @@ module Hol : Hol_kernel = struct
   let hiproof(Sequent(hi, _, _)) = hi
   let set_hiproof hi_new (Sequent (_, asl, c)) = Sequent (hi_new, asl, c);;
 
-  let hilabel label = Hiproofs.label_rule (hiproof, set_hiproof) label;; 
+  let hilabel composite label = Hiproofs.label_rule (hiproof, set_hiproof) composite label;; 
 
 (* ------------------------------------------------------------------------- *)
 (* List of current type constants with their arities.                        *)
@@ -697,8 +697,28 @@ let equals_thm th th' = dest_thm th = dest_thm th';;
 
 let string_label = Hiproofs.make_string_label;;
 
-let hilabel_thm l th = hilabel l (fun _ -> th) [];;
-let hilabel_thm_str tag th = hilabel (string_label tag) (fun _ -> th) [];;
+let hilabel_thm composite l th = hilabel composite l (fun _ -> th) [];;
+let hilabel_thm_str tag th = hilabel true (string_label tag) (fun _ -> th) [];;
+let hilabel_thm_thm l th_th th = hilabel false l (fun ths -> th_th (List.hd ths)) [th];;
+
+let hilabel_thm_split tag_main tag_case1 tag_case2 u a b =
+  (hilabel false (string_label tag_main) (fun [a;b] -> u a b)) 
+    [(hilabel_thm_str tag_case1 a); (hilabel_thm_str tag_case2 b)];;
+
+let hilabel_thm_split' l_main l_case1 l_case2 u a b =
+  (hilabel false l_main (fun [a;b] -> u a b)) 
+    [(hilabel_thm true l_case1 a); (hilabel_thm true l_case2 b)];;
+
+
+let rich_label, dest_rich_label = 
+  let (rich_label_constr : (string * hol_type list * term list * thm list) 
+         Hiproofs.labelconstr) = 
+    Hiproofs.labelconstr()
+  in
+  (Hiproofs.make_label rich_label_constr,
+   Hiproofs.dest_label rich_label_constr);;
+
+let simple_label s = rich_label (s, [], [], []);;
 
 let store_thm optname th = 
   let name = 
@@ -707,3 +727,34 @@ let store_thm optname th =
       | Some n -> "lemma "^n 
   in
   hilabel_thm_str name th;;
+
+(* ------------------------------------------------------------------------- *)
+(* For tactics.                                                              *)
+(* ------------------------------------------------------------------------- *)
+
+let hilabel_tac composite label tac g =
+  let (inst, gls, j) = tac g in   
+  (inst, gls, (fun inst -> hilabel composite label (j inst)));;
+
+let hilabel_tac_str tag = hilabel_tac false (string_label tag);;
+
+let hilabel_tac_goals goal_labels tac g = 
+  let (inst, gls, j) = tac g in
+  (inst, gls, (fun inst ths -> j inst (List.map2 (hilabel_thm true) goal_labels ths)));;
+
+let hilabel_tac_frame label tac g =
+  let (inst, gls, j) = tac g in
+  (inst, gls, (fun inst ths -> hilabel_thm true label (j inst ths)));;
+
+let hilabel_tac_p label tac p = hilabel_tac false label (tac p);;
+
+let hilabel_tac_split tag_main tag_case1 tag_case2 tac =
+  let f s = Hiproofs.make_important_label (string_label s) in
+  hilabel_tac_frame (f tag_main) 
+    (hilabel_tac_goals [f tag_case1; f tag_case2] 
+       (hilabel_tac_str tag_main tac));;
+
+let hilabel_tac_thms name t ths = hilabel_tac false (rich_label (name, [], [], ths)) (t ths);;
+
+Hiproofs.allow_atomic := true;;
+Hiproofs.complexity_treshold := 1000;;

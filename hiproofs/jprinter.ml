@@ -55,10 +55,18 @@ module Jprinter = struct
   
   let jprint_goalid id = jprint_int id;;
   
-  let jprint_label l =
-    match Hiproofs.dest_string_label l with
-        None -> jprint_fstring "unknown"
-      | Some x -> jprint_fstring x;;
+  let rec jprint_label l =
+    match Hiproofs.dest_important_label l with
+        None -> 
+          (match Hiproofs.dest_string_label l with
+              None -> 
+                (match dest_rich_label l with
+                    None -> jprint_fstring "unknown"
+                  | Some (l, _, _, []) -> jprint_fstring l
+                  | Some (l, _, _, _) -> jprint_fstring (l^" *"))
+            | Some x -> jprint_fstring x)
+      | Some l -> jprint_label l;;
+            
   
 end
   

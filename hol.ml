@@ -80,12 +80,20 @@ let needs s =
   if List.mem fileid (!loaded_files)
   then Format.print_string("File \""^s^"\" already loaded\n") else loadt s;;
 
-loads "hiproofs/hiproofs.ml";;
-
+let profile_loads s =
+  let mem1 = Gc.allocated_bytes () in
+  let time1 = Sys.time() in
+  let _ = loads s in
+  let mem2 = Gc.allocated_bytes () in
+  let time2 = Sys.time() in
+  print_endline ("mem: "^(string_of_float (mem2 -. mem1))^", time: "^(string_of_float (time2 -. time1)));;
+  
 
 (* ------------------------------------------------------------------------- *)
 (* Various tweaks to OCaml and general library functions.                    *)
 (* ------------------------------------------------------------------------- *)
+
+loads "hiproofs/hiproofs.ml";;
 
 loads "system.ml";;     (* Set up proper parsing and load bignums            *)
 loads "lib.ml";;        (* Various useful general library functions          *)
@@ -107,26 +115,33 @@ loads "nets.ml";;       (* Term nets for fast matchability-based lookup      *)
 (* The interface.                                                            *)
 (* ------------------------------------------------------------------------- *)
 
+loads "printer.ml";;    (* Crude prettyprinter                               *)
 loads "preterm.ml";;    (* Preterms and their interconversion with terms     *)
 loads "parser.ml";;     (* Lexer and parser                                  *)
-loads "printer.ml";;    (* Crude prettyprinter                               *)
 
 (* ------------------------------------------------------------------------- *)
 (* Higher level deductive system.                                            *)
 (* ------------------------------------------------------------------------- *)
 
 loads "equal.ml";;      (* Basic equality reasoning and conversionals        *)
+loads "hiproofs/mods/equal_m.ml";;
 loads "bool.ml";;       (* Boolean theory and basic derived rules            *)
+loads "hiproofs/mods/bool_m.ml";;
 loads "drule.ml";;      (* Additional derived rules                          *)
+loads "hiproofs/mods/drule_m.ml";;
 loads "tactics.ml";;    (* Tactics, tacticals and goal stack                 *)
+loads "hiproofs/mods/tactics_m.ml";;
 loads "itab.ml";;       (* Toy prover for intuitionistic logic               *)
 loads "simp.ml";;       (* Basic rewriting and simplification tools.         *)
+loads "hiproofs/mods/simp_m.ml";;
 loads "theorems.ml";;   (* Additional theorems (mainly for quantifiers) etc. *)
 loads "ind_defs.ml";;   (* Derived rules for inductive definitions           *)
 loads "class.ml";;      (* Classical reasoning: Choice and Extensionality    *)
+loads "hiproofs/mods/class_m.ml";;
 loads "trivia.ml";;     (* Some very basic theories, e.g. type ":1"          *)
 loads "canon.ml";;      (* Tools for putting terms in canonical forms        *)
 loads "meson.ml";;      (* First order automation: MESON (model elimination) *)
+loads "hiproofs/mods/meson_m.ml";;
 loads "quot.ml";;       (* Derived rules for defining quotient types         *)
 
 (* ------------------------------------------------------------------------- *)
@@ -135,6 +150,7 @@ loads "quot.ml";;       (* Derived rules for defining quotient types         *)
 
 loads "pair.ml";;       (* Theory of pairs                                   *)
 loads "nums.ml";;       (* Axiom of Infinity, definition of natural numbers  *)
+loads "hiproofs/mods/nums_m.ml";;
 loads "recursion.ml";;  (* Tools for primitive recursion on inductive types  *)
 loads "arith.ml";;      (* Natural number arithmetic                         *)
 loads "wf.ml";;         (* Theory of wellfounded relations                   *)
@@ -148,7 +164,9 @@ loads "calc_int.ml";;   (* Calculation with integer-valued reals             *)
 loads "realarith.ml";;  (* Universal linear real decision procedure          *)
 loads "real.ml";;       (* Derived properties of reals                       *)
 loads "calc_rat.ml";;   (* Calculation with rational-valued reals            *)
+loads "hiproofs/mods/calc_rat_m.ml";;
 loads "int.ml";;        (* Definition of integers                            *)
+loads "hiproofs/mods/int_m.ml";;
 loads "sets.ml";;       (* Basic set theory.                                 *)
 loads "iterate.ml";;    (* Iterated operations                               *)
 loads "cart.ml";;       (* Finite Cartesian products                         *)
