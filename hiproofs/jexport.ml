@@ -25,7 +25,7 @@ let save_textfile file string =
      close_out channel;;
 
 let show_in_browser file =
-  let cmd = JGRAPH_BROWSER_COMMAND in
+  let cmd = (!JGRAPH_BROWSER_COMMAND) in
   let i = String.index cmd '$' in
   let cmd = (String.sub cmd 0 i)^
     (escape_file file)^
