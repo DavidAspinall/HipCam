@@ -9,9 +9,7 @@ There is also a forthcoming paper about it.
 If you are eager to use it NOW, do the following:
 
 * Install HOL Light (see hol.ml to see if the versions match).
-* Copy the hiproofs directory into the HOL Light directory
-* Copy the files in hollight-modifications into the HOL Light directory, overwriting the original ones.    
-  Only fusion.ml, tactics.ml and hol.ml are necessary modifications, but the more modifications, the better the quality of the recorded hiproofs.      
+* Copy the hiproofs directory and fusion.ml and hol.ml into the HOL Light directory
   
 Make sure that the variable JGRAPH_BROWSER_COMMAND in hiproofs/main.ml is set properly for your environment. The default value is
 
@@ -22,7 +20,7 @@ which uses Chrome on Mac OS X as a browser. The dollar sign $ is where the locat
 
 You can now export a theorem T via
 
-    Hitools.export T name
+    Hitools.export size T name
     
 For adding your own hierarchical boxes to proofs, you can use the **hilabel** function or any of its derivatives:
 
