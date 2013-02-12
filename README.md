@@ -3,8 +3,8 @@ hiproofs
 
 Tools for recording Hiproofs in hol-light and visualising them in a web browser.
 
-More extensive documentation on how to use these tools is comming soon.
-There is also a forthcoming paper about it. 
+More extensive documentation on how to use these tools is coming soon.
+There is also a forthcoming paper about it. For some high-level information available now, see the slides in the file *hiproofs_talk.pdf*. 
 
 If you are eager to use it NOW, do the following:
 
