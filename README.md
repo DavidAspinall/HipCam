@@ -8,21 +8,26 @@ There is also a forthcoming paper about it. For some high-level information avai
 
 If you are eager to use it NOW, do the following:
 
-* Install HOL Light (see hol.ml to see if the versions match).
+* Make sure you have OCaml 4.00 or better (we've used GADTs)
+* Install HOL Light (see hol.ml to see if the versions match)
 * Copy the hiproofs directory and fusion.ml and hol.ml into the HOL Light directory
-  
-Make sure that the variable JGRAPH_BROWSER_COMMAND in hiproofs/main.ml is set properly for your environment. The default value is
 
-    open "/Applications/Google Chrome.app" $
+Make sure that the variable JGRAPH_BROWSER_COMMAND in hiproofs/main.ml
+is set properly for your environment. The default value is
+
+    open $
     
-which uses Chrome on Mac OS X as a browser. The dollar sign $ is where the location of the HTML file to display will be inserted.
+which uses the Mac OS X's `open` command to show the generated HTML in
+the default web browser. The dollar sign $ is where the location of
+the HTML file to display will be inserted.
 
 
-You can now export a theorem T via
+You can now export a theorem *T* via
 
-    Hitools.export size T name
+    Hitools.export *size* *T* *name*
     
-For adding your own hierarchical boxes to proofs, you can use the **hilabel** function or any of its derivatives:
+For adding your own hierarchical boxes to proofs, you can use the
+**hilabel** function or any of its derivatives:
 
     hilabel : Hiproofs.label -> (thm list -> thm) -> thm list -> thm
     hilabel_thm : Hiproofs.label -> thm -> thm
