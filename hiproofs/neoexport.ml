@@ -7,10 +7,11 @@ module Neoexport = struct
   open Neograph;;
   open Jexport;;
 
+  (* TODO: this pops up an OS X dialogue! Find better way to connect, via REST or some API *)
   let pipe_to_db file = 
     let cmd = (!NEO_DB_SHELL_COMMAND) in
     if (cmd != "") then
-      let retval = Sys.command (cmd ^ " < " ^ file) in 
+      let retval = Sys.command (cmd ^ " -file " ^ file ^ " > /dev/null") in 
       if retval > 0 then 
 	failwith("Sending CREATE command to database failed.") else ();
     else ();;
@@ -24,6 +25,7 @@ module Neoexport = struct
       failwith ("no such directory: "^dir) else ();
     let tmp_file = create_new_filename dir (name^".neo4j") in
     save_textfile tmp_file defgraph;
+    pipe_to_db tmp_file;
     print_string ("exported graph to: "^tmp_file);;
   
 end
