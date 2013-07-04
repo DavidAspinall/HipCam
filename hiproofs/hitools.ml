@@ -265,13 +265,15 @@ let jgraph_of_hiproof hi =
   jg;;
 
 
-let hiexport n hi name =
-  Jexport.jexport 
-    (fun (hs, c) -> (List.map string_of_term hs, string_of_term c))
-    name 
-    (jgraph_of_hiproof (clean [] (shrink n hi)));;
+let hiexport exportfn n hi name =
+    exportfn
+      (fun (hs, c) -> (List.map string_of_term hs, string_of_term c))
+      name 
+      (jgraph_of_hiproof (clean [] (shrink n hi)));;
 
-let export n th name = hiexport n (hiproof th) name;;
+let export n th name =  hiexport Jexport.jexport n (hiproof th) name;;
+
+let neoexport n th name = hiexport Neoexport.neoexport n (hiproof th) name;;
             
 let info = "β conversion";;
 

@@ -75,8 +75,8 @@ module Hiproofs : sig
   val input : 'a hiproof -> 'a
   val inputs : 'a hiproof -> 'a list
 
-  val allow_atomic : bool ref
-  val complexity_treshold : int ref
+  val allow_atomic : bool ref           (* "max detail" sets this true *)
+  val complexity_treshold : int ref     
 
 
 (* Utility functions *)
