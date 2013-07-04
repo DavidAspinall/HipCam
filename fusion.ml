@@ -687,11 +687,12 @@ let mk_eq =
 let aconv s t = alphaorder s t = 0;;
 
 (* ------------------------------------------------------------------------- *)
-(* Comparison function on theorems. Currently the same as equality, but      *)
-(* it's useful to separate because in the proof-recording version it isn't.  *)
+(* Comparison functions on theorems.					     *)
 (* ------------------------------------------------------------------------- *)
 
 let equals_thm th th' = dest_thm th = dest_thm th';;
+
+let equals_proofs th th' = hiproof th = hiproof th';;
 
 (* Hiproofs stuff that can live outside of the kernel *)
 

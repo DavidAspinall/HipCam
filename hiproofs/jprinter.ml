@@ -1,5 +1,6 @@
 module Jprinter = struct
 
+  (* da: is this buffer actually used as such?  I can't see any nested calls to start *)
   let jprint_buffer = ref ([] : string list);;
   
   let jprint_start () = (jprint_buffer := (""::!jprint_buffer));;
@@ -32,7 +33,8 @@ module Jprinter = struct
   let jprint_indent i = jprint_string (String.make i ' ');;
   
   let jprint_string_if b x = if b then jprint_string x;;
-  
+
+  (* da NB: String.escaped follows OCaml conventions, not Javascript/bash *)
   let jprint_fstring x = jprint_string ("\"" ^ String.escaped x ^ "\"");;
   
   let jprint_fterm tm =

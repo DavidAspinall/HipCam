@@ -14,15 +14,16 @@ let create_new_filename dir suggestion =
   in create 0;;
 
 let escape_file name = (jprint_start(); jprint_fstring name; jprint_stop());;
+(* da: this seems to ammount to "\"" ^ (String.escape name) ^ "\"" *)
 
 let copy_dir old_dir new_dir =
   let _ = Sys.command ("cp -r "^(escape_file old_dir)^" "^(escape_file new_dir)) in
   ();;
 
 let save_textfile file string =
-     let channel = open_out file in
-     output_string channel string;
-     close_out channel;;
+  let channel = open_out file in
+  output_string channel string;
+  close_out channel;;
 
 let show_in_browser file =
   let cmd = (!JGRAPH_BROWSER_COMMAND) in
