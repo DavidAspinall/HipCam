@@ -1,15 +1,16 @@
 function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
-    
+
     var context;
     var expanded;
     var showgoal;
     var measure_text;
     var PADDING = 10;
+    var HEADER_PADDING = 5;
     var HORIZONTAL_GAP = 30;
     var VERTICAL_GAP = 30;
     var LABEL_FONT = '10pt Arial';
     var laidout = {};
-    
+
     function pushall(vec1, vec2) {
         var i;
         for (i = 0; i < vec2.length; i += 1) {
@@ -17,7 +18,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         }
         return vec1;
     }
-    
+
     function layout(goalid, render) {
         var box;
         if (!showgoal(goalid)) {
@@ -25,7 +26,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             if (render) {
                 laidout[goalid] = {x: render.x, y:render.y, width: box.width, height:box.height,
                     goal : null, tactic : {x: render.x, y:render.y, width: box.width, height:box.height}};
-                
+
             }
             return box;
         }
@@ -37,54 +38,101 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         var height = goal_dim.height + VERTICAL_GAP + tactic_dim.height;
         if (render) {
             laidout[goalid] = {x:render.x, y:render.y, width:width, height:height};
+
             laidout[goalid].goal = {x:render.x+(width-goal_dim.width)/2, y:render.y,
                 width:goal_dim.width, height:goal_dim.height};
+
             laidout[goalid].tactic = {x:render.x+(width-tactic_dim.width)/2,
                 y:render.y+goal_dim.height+VERTICAL_GAP,
                 width:tactic_dim.width, height:tactic_dim.height};
+
             render_goal(goal.hyps, goal.goal, false,
                         {x:render.x+(width-goal_dim.width)/2,
                          y:render.y});
+
             layout_tactic(goalid,
                           {x:render.x+(width-tactic_dim.width)/2,
                            y:render.y+goal_dim.height+VERTICAL_GAP});
         }
         tactic_dim.width = width;
         tactic_dim.height = height;
-        
         return tactic_dim;
     }
-    
-    function render_tactic_header(text, expandable, expanded, min_width, additional_height, render) {
+
+    function render_tactic_header(text, rich_label, expandable, expanded, min_width, additional_height, render) {
         context.font = LABEL_FONT;
         context.lineWidth = 1;
         context.strokeStyle = 'black';
+        var ICONSIZE = 14;
+        var is_rich = rich_label.terms || rich_label.thms;
+        var rheight = 0;
         var m = measure_text(context, text);
-        var width = m.width + 2 * PADDING;
-        var ICONSIZE = 14;//m.height;
-        if (expandable) {
-            width += ICONSIZE+PADDING;
+        if(expandable) {
+            m.width = m.width + ICONSIZE + PADDING;
         }
+        var txt_width = m.width;
+        if (rich_label.terms) {
+            rheight++;
+            var mn = measure_text(context, rich_label.terms);
+            if (mn.width > m.width) {
+                m = mn;
+            }
+        }
+        if (rich_label.thms) {
+            rheight++;
+            var mn = measure_text(context, rich_label.thms);
+            if (mn.width > m.width) {
+                m = mn;
+            }
+        }
+        var width = m.width + 2 * PADDING;
+
         if (width < min_width) {
             width = min_width;
         }
-        var height = m.height + 2 * PADDING;
+
+        var height = (1+rheight)*m.height + 2* PADDING + rheight*HEADER_PADDING;
         if (render) {
+            rich_label_size = {height: PADDING + rheight*(m.height) + (rheight-1)*+HEADER_PADDING,
+                offset: m.height+PADDING+HEADER_PADDING};
+            var rich_background;
             if (expandable) {
                 context.fillStyle = '#92E6F0';
+                rich_background = '#91bef4';
             } else {
                 context.fillStyle = '#BAF5C9';
+                rich_background = '#7ed2bb';
             }
+
             context.fillRect(render.x, render.y, width, height + additional_height);
-            context.strokeRect(render.x, render.y, width, height + additional_height);
             context.fillStyle = 'black';
             context.textAlign = 'start';
             context.textBaseline = 'top';
             var x = render.x + PADDING;
+            var y = render.y + PADDING;
+
+            if (is_rich) {
+                x = render.x + (width - txt_width)/2;
+            }
+
             if (expandable) x += ICONSIZE+PADDING;
-            context.fillText(text,
-                             x,
-                             render.y + PADDING);
+
+            context.fillText(text,x,y);
+            if(is_rich) {
+                console.log(rich_label,render.rich_label);
+                context.fillStyle = rich_background;
+                context.fillRect(render.x, render.y+rich_label_size.offset, width, rich_label_size.height);
+                context.fillStyle = '#000000';
+                rich_y = render.y+rich_label_size.offset + HEADER_PADDING;
+                if(rich_label.terms) {
+                    context.fillText(rich_label.terms, render.x+PADDING, rich_y);
+                    rich_y += m.height + HEADER_PADDING;
+                }
+                if (rich_label.thms) {
+                    context.fillText(rich_label.thms, render.x+PADDING, rich_y);
+                }
+            }
+            context.strokeRect(render.x, render.y, width, height + additional_height);
             if (expandable) {
                 context.fillStyle = 'white';
                 context.fillRect(render.x+PADDING, render.y+PADDING, ICONSIZE, ICONSIZE);
@@ -99,9 +147,9 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             }
         }
         return {width : width, height : height};
-        
+
     }
-    
+
     /* Returns an object { width, height, outgoing }.
      Params:
      goalid - the id of the goal to render
@@ -116,7 +164,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         var expandable = goal.children.length > 0;
         if (expanded(goalid) && expandable) {
             var result = layout_children(goalid, null);
-            var m = render_tactic_header(goal.tactic, true, true, result.width + 2 * PADDING, result.height + 2 * PADDING, render);
+            var m = render_tactic_header(goal.tactic, goal.rich_label, true, true, result.width + 2 * PADDING, result.height + 2 * PADDING, render);
             var width = m.width;
             var height = m.height;
             var total_height = height + PADDING + result.height + PADDING;
@@ -138,7 +186,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             if (expandable) {
                 pushall(outgoing, layout_children(goalid, null).outgoing);
             }
-            var m = render_tactic_header(goal.tactic, expandable, false, 0, 0, render);
+            var m = render_tactic_header(goal.tactic, goal.rich_label, expandable, false, 0, 0, render);
             return {
                     width : m.width,
                     height : m.height,
@@ -146,7 +194,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
                    };
         }
     }
-    
+
     function layout_from(goalid, render) {
         //return layout(goalid, render);
         var result = layout(goalid, null);
@@ -187,7 +235,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             return {width : width, height : height, outgoing : outgoing};
         }
     }
-    
+
     function layout_row(ids, render) {
         var x = 0, height = 0;
         var outgoing = [];
@@ -196,18 +244,18 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             if (i > 0) x += HORIZONTAL_GAP;
             var result;
             if (render) {
-                result = layout_from(ids[i], {x : render.x + x, y : render.y });
+                result = layout_from(ids[i], {x : render.x + x, y : render.y});
             } else {
                 result = layout_from(ids[i], null);
             }
             x += result.width;
             if (result.height > height) height = result.height;
             pushall(outgoing, result.outgoing);
-            
+
         }
         return {width: x, height: height, outgoing : outgoing};
     }
-    
+
     function layout_children(parent_id, render) {
         //console.log('layout the children of '+parent_id);
         var children = computeChildren(gs, parent_id);
@@ -220,13 +268,13 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         //console.log('number of top children: '+top_child.length);
         return layout_row(top_child, render);
     }
-    
+
     function getcoors(dim, s) {
         return {x:dim.x+dim.width/2,y:dim.y+s*dim.height};
     }
-    
+
     var arrows = [];
-    
+
     function draw_arrow(from_id, to_id) {
         context.lineWidth = 2;
         //console.log('draw_arrow from '+from_id+' to '+to_id);
@@ -240,7 +288,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         arrows.push({x1:src.x, y1:src.y+1, x2:dest.x, y2:dest.y-1,
                    from_id:from_id, to_id:to_id});
     }
-    
+
     function simply_draw_arrow(from_dim, to_dim) {
         var src = getcoors(from_dim,1);
         var dest = getcoors(to_dim,0);
@@ -249,9 +297,9 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         context.beginPath();
         context.moveTo(src.x, src.y+1);
         context.lineTo(dest.x, dest.y-1);
-        context.stroke();        
+        context.stroke();
     }
-    
+
     function search_arrow(x, y) {
         function dist(x1, y1, x2, y2) {
             var dx = x2-x1, dy = y2-y1;
@@ -270,16 +318,16 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         }
         return null;
     }
-    
+
     function laidoutAncestor(id) {
         if (laidout[id]) {
             return id;
         } else {
             return laidoutAncestor(lookupGoal(gs, id).parent_id);
         }
-        
+
     }
-    
+
     function draw_arrows() {
         arrows = [];
         var i;
@@ -296,8 +344,8 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             }
         }
     }
-    
-    
+
+
     function find_goalid_at(x, y, lookup) {
         var r = null;
         var found = null;
@@ -319,7 +367,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         }
         return found;
     }
-    
+
     function render_multiline_text(context, h, render) {
         context.textAlign = 'start';
         context.textBaseline = 'top';
@@ -334,7 +382,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         }
         return dim;
     }
-    
+
     function render_goal(hyps, goal, border, pos) {
         context.font = LABEL_FONT;
         context.lineWidth = 1;
@@ -383,7 +431,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         }
         return box;
     }
-    
+
     function rendergraph(canvas) {
         laidout = {};
         var result = layout_children(null, null);
@@ -394,11 +442,11 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         layout_children(null, {x:0, y:0});
         draw_arrows();
     }
-    
+
     function render(canvas)
     {
         context = canvas.getContext('2d');
-        
+
         expanded = function(id) {
             if (is_collapsed[id])
                 return true;
@@ -410,8 +458,8 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
                 return true;
             else return false;
         };
-        
-        
+
+
         measure_text = function(ctx, label) {
             var w = ctx.measureText(label).width;
             var h = ctx.measureText('M').width * 1.2;
@@ -419,9 +467,9 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
         };
 
         rendergraph(canvas);
-        
+
         var hovering_goal = null;
-        
+
         canvas.onmousedown = function(e) {
             if (hovering_goal) {
                 goal_is_attached[hovering_goal] = true;
@@ -448,7 +496,7 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
                 return;
             }
         };
-                
+
         function findArrow(e) {
             var loc = CanvasTools.windowToCanvas(canvas, e.clientX, e.clientY);
             var on_arrow = search_arrow(loc.x, loc.y);
@@ -458,8 +506,8 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
                                     //});
             //return id;
             return null;
-        }        
-        
+        }
+
         function startedHovering(f, e) {
             if (showgoal(f)) return;
             if (hovering_goal) return;
@@ -470,22 +518,22 @@ function createCanvasGraph(canvas, gs, is_collapsed, goal_is_attached) {
             var dim = render_goal(g.hyps, g.goal, true, null);
             render_goal(g.hyps, g.goal, true, {x : loc.x - dim.width/2, y: loc.y - dim.height/2});
         }
-        
+
         function stoppedHovering(f, event) {
             console.log('stopped hovering: '+f);
             hovering_goal = null;
             rendergraph(canvas);
         }
-        
-        
+
+
         canvas.onmousemove =
         CanvasTools.hoverEventHandler(500, 100, 0,
                                       findArrow,
                                       startedHovering,
                                       stoppedHovering);
     };
-    
+
     render(canvas);
-    
+
     return laidout;
 }

@@ -30,6 +30,8 @@ let temp_path = ref "/tmp";;
 (* and for Ocaml >= 3.10, use camlp5 instead.                                *)
 (* ------------------------------------------------------------------------- *)
 
+#use "topfind";;
+#require "camlp5";;
 if let v = String.sub Sys.ocaml_version 0 4 in v >= "3.10"
 then (Topdirs.dir_directory "+camlp5";
       Topdirs.dir_load Format.std_formatter "camlp5o.cma")
@@ -89,13 +91,14 @@ let profile_loads s =
   let mem2 = Gc.allocated_bytes () in
   let time2 = Sys.time() in
   print_endline ("mem: "^(string_of_float (mem2 -. mem1))^", time: "^(string_of_float (time2 -. time1)));;
-  
+
 
 (* ------------------------------------------------------------------------- *)
 (* Various tweaks to OCaml and general library functions.                    *)
 (* ------------------------------------------------------------------------- *)
 
 loads "hiproofs/hiproofs.ml";;
+loads "hiproofs/extract.ml";;
 
 loads "system.ml";;     (* Set up proper parsing and load bignums            *)
 loads "lib.ml";;        (* Various useful general library functions          *)
@@ -137,6 +140,7 @@ loads "itab.ml";;       (* Toy prover for intuitionistic logic               *)
 loads "simp.ml";;       (* Basic rewriting and simplification tools.         *)
 loads "hiproofs/mods/simp_m.ml";;
 loads "theorems.ml";;   (* Additional theorems (mainly for quantifiers) etc. *)
+loads "hiproofs/mods/theorems_m.ml";;
 loads "ind_defs.ml";;   (* Derived rules for inductive definitions           *)
 loads "class.ml";;      (* Classical reasoning: Choice and Extensionality    *)
 loads "hiproofs/mods/class_m.ml";;
@@ -155,6 +159,7 @@ loads "nums.ml";;       (* Axiom of Infinity, definition of natural numbers  *)
 loads "hiproofs/mods/nums_m.ml";;
 loads "recursion.ml";;  (* Tools for primitive recursion on inductive types  *)
 loads "arith.ml";;      (* Natural number arithmetic                         *)
+loads "hiproofs/mods/arith_m.ml";;
 loads "wf.ml";;         (* Theory of wellfounded relations                   *)
 loads "calc_num.ml";;   (* Calculation with natural numbers                  *)
 loads "normalizer.ml";; (* Polynomial normalizer for rings and semirings     *)

@@ -68,7 +68,54 @@ module Jprinter = struct
                   | Some (l, _, _, _) -> jprint_fstring (l^" *"))
             | Some x -> jprint_fstring x)
       | Some l -> jprint_label l;;
-            
+
+  let rec get_label l =
+    match Hiproofs.dest_important_label l with
+        None -> 
+          (match Hiproofs.dest_string_label l with
+              None -> 
+                (match dest_rich_label l with
+                    None -> "unknown"
+                  | Some (l, _, _, []) -> l
+                  | Some (l, _, _, _) -> (l^" *"))
+            | Some x -> x)
+      | Some l -> get_label l;;
+
+  let rec get_highest_label hi = 
+    match (hiproof hi) with
+    | Hi_label (label,_,_,_) -> label
+    | Hi_atomic (_,label,_,_) -> label
+    | _ -> string_label ("`"^(string_of_term (snd (dest_thm hi)))^"`");;
+
+  let get_rich_label l = 
+    let name_rich rich = List.map (fun s -> get_highest_label s) rich in
+    let list_terms terms =
+      match terms with
+      | [] -> None
+      | _ -> Some (String.concat "; " (List.map (fun s -> "`"^(string_of_term s)^"`") terms))
+    in let list_thms thms = 
+      match thms with
+      | [] -> None
+      | _ -> Some (String.concat "; " (List.map (get_label) (name_rich thms)))
+    in match Hiproofs.dest_important_label l with
+          None -> 
+            (match Hiproofs.dest_string_label l with
+                None -> 
+                  (match dest_rich_label l with
+                      None -> (Some "unknown", None, None)
+                    | Some (l, _, terms, thms) -> (Some l, list_terms terms, list_thms thms))
+              | Some x -> (Some x, None, None))
+        | Some l -> (Some (get_label l), None, None);;            
+
+  let jprint_richlabel label = 
+    let (_, terms, thms) = get_rich_label label in
+    let text = 
+      match (terms,thms) with
+      | (None, None) -> "{}"
+      | (Some tr, Some th) -> "{terms:\"("^(String.escaped tr)^")\", thms: \"["^(String.escaped th)^"]\"}"
+      | (Some tr, None) -> "{terms:\"("^(String.escaped tr)^")\"}"
+      | (None, Some th) -> "{terms:\"["^(String.escaped th)^"]\"}"
+    in jprint_string text;;
   
 end
   

@@ -21,7 +21,7 @@ function lookupGoal(graphstruct, id) {
     }
 };
 
-function defineNode(graphstruct, parent_id, id, hyps, goal, tactic) {
+function defineNode(graphstruct, parent_id, id, hyps, goal, tactic, rich_label) {
     if (lookupGoal(graphstruct, id))
         throwGraphStructError("defineGoal", "a goal with this id has already been defined");
     var parent = null;
@@ -39,6 +39,9 @@ function defineNode(graphstruct, parent_id, id, hyps, goal, tactic) {
         level = level + 1;
         p = p_goal.parent_id;
     }
+    if (rich_label == undefined) {
+        rich_label = {};
+    }
     var g = {
         id : id,
         level : level,
@@ -49,6 +52,7 @@ function defineNode(graphstruct, parent_id, id, hyps, goal, tactic) {
         parent_id : parent_id,
         incoming : null,
         outgoing : [],
+        rich_label: rich_label
     };
     graphstruct.goals[id] = g;
     graphstruct.goalids.push(id);
