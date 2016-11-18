@@ -76,8 +76,8 @@ let rec print_jnode hyps_and_goal parent jnode =
     comma (); jprint_int jid;
     comma (); print_hyps hyps; 
     comma (); jprint_fstring goal;
-    comma (); 
-    jprint_label label;
+    comma (); jprint_label label;
+    comma (); jprint_richlabel label;
     jprint_string ");\n"
   in
   let print_edge id1 id2 =
